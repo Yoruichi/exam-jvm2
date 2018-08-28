@@ -1,6 +1,7 @@
 package com.foo;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,6 +26,15 @@ public class ExamTest {
     @AfterClass
     public static void tearDown() {
         skuIds = null;
+    }
+
+    @Test
+    public void testItemGroup() {
+        ItemGroupService service = new ItemGroupServiceImpl();
+        List<ItemInfo> items = service.itemGroup(skuIds);
+        System.out.println(items.size());
+        System.out.println(items);
+        Assert.assertTrue(items.size() == 6);
     }
 
 }
