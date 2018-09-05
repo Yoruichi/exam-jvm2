@@ -2,12 +2,8 @@ package com.foo;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ItemGroupServiceImpl extends ItemGroupServiceAd {
-
-    private static final String ORIGIN = "ORIGIN";
-    private static final String DIGITAL = "DIGITAL";
 
     public ItemGroupServiceImpl() {
         super(ServiceBeanFactory.getInstance().getServiceBean(SkuService.class),
@@ -15,7 +11,6 @@ public class ItemGroupServiceImpl extends ItemGroupServiceAd {
                 ServiceBeanFactory.getInstance().getServiceBean(InventoryService.class)
         );
     }
-
 
     @Override public List<ItemInfo> itemGroup(List<String> skuIds) {
         Map<String, SkuInfoDTO> entitys = this.querySkuEntity(skuIds);
@@ -31,51 +26,19 @@ public class ItemGroupServiceImpl extends ItemGroupServiceAd {
             item.setSpuId(skuInfoDTO.getSpuId());
             item.setSkuType(skuInfoDTO.getSkuType());
             item.setInventory(inventorys.containsKey(id) ? inventorys.get(id) : new BigDecimal(0));
-            item.setMinPrice(prices.containsKey(id) ? prices.get(id) : new BigDecimal(0));
+            item.setPrice(prices.containsKey(id) ? prices.get(id) : new BigDecimal(0));
             itemInfoList.add(item);
         });
         System.out.println(String.format("Query %d item.", itemInfoList.size()));
-        Map<String, List<ItemInfo>> originItems =
-                itemInfoList.stream().filter(s -> ORIGIN.equals(s.getSkuType()))
-                        .collect(Collectors.groupingBy(ItemInfo::getArtNo));
+        List<ItemInfo> originItems =
+                ItemGroupServiceFactory.getService(ItemType.ORIGIN).itemGroupByType(itemInfoList);
         System.out.println(String.format("Origin item: %d", originItems.size()));
-        Map<String, List<ItemInfo>> digitalItems =
-                itemInfoList.stream().filter(s -> DIGITAL.equals(s.getSkuType()))
-                        .collect(Collectors.groupingBy(ItemInfo::getSpuId));
+        List<ItemInfo> digitalItems =
+                ItemGroupServiceFactory.getService(ItemType.DIGITAL).itemGroupByType(itemInfoList);
         System.out.println(String.format("Origin item: %d", digitalItems.size()));
         List<ItemInfo> res = new ArrayList<>();
-        originItems.entrySet().stream().forEach(e -> {
-            ItemInfo item = new ItemInfo();
-            item.setName(e.getValue().get(0).getName());
-            item.setArtNo(e.getKey());
-            item.setSkuType(ORIGIN);
-            Optional<BigDecimal> inventory =
-                    e.getValue().stream().map(ItemInfo::getInventory).reduce((a, b) -> a.add(b));
-            if (inventory.isPresent()) item.setInventory(inventory.get());
-            Optional<BigDecimal> minPrice =
-                    e.getValue().stream().map(ItemInfo::getMinPrice).min(Comparator.naturalOrder());
-            if (minPrice.isPresent()) item.setMinPrice(minPrice.get());
-            Optional<BigDecimal> maxPrice =
-                    e.getValue().stream().map(ItemInfo::getMinPrice).max(BigDecimal::compareTo);
-            if (minPrice.isPresent()) item.setMaxPrice(maxPrice.get());
-            res.add(item);
-        });
-        digitalItems.entrySet().stream().forEach(e -> {
-            ItemInfo item = new ItemInfo();
-            item.setName(e.getValue().get(0).getName());
-            item.setSpuId(e.getKey());
-            item.setSkuType(DIGITAL);
-            Optional<BigDecimal> inventory =
-                    e.getValue().stream().map(ItemInfo::getInventory).reduce((a, b) -> a.add(b));
-            if (inventory.isPresent()) item.setInventory(inventory.get());
-            Optional<BigDecimal> minPrice =
-                    e.getValue().stream().map(ItemInfo::getMinPrice).min(Comparator.naturalOrder());
-            if (minPrice.isPresent()) item.setMinPrice(minPrice.get());
-            Optional<BigDecimal> maxPrice =
-                    e.getValue().stream().map(ItemInfo::getMinPrice).max(BigDecimal::compareTo);
-            if (minPrice.isPresent()) item.setMaxPrice(maxPrice.get());
-            res.add(item);
-        });
+        res.addAll(originItems);
+        res.addAll(digitalItems);
         return res;
     }
 }

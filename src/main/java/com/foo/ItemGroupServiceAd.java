@@ -32,8 +32,6 @@ public abstract class ItemGroupServiceAd implements ItemGroupService {
         return skuInfoList.stream().collect(Collectors.toMap(SkuInfoDTO::getId, sk -> sk));
     }
 
-
-
     public Map<String, BigDecimal> querySkuPrice(List<String> skuIds) {
         Map<String, BigDecimal> priceMap = new HashMap<>();
         skuIds.stream().forEach(id -> {
